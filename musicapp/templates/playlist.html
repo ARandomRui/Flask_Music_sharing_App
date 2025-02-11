@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<h1 class="center">My Playlist</h1>
+
+<div class="ezcontainer">
+  {% for music in music_list %}
+    <article class="music-box content-section media">
+      <!-- Clickable Cover Image -->
+      <a href="{{ url_for('main.get_music', music_id=music.id) }}">
+        <img class="article-img" src="{{ url_for('static', filename='cover_pics/' + music.cover_image_file|string) }}">
+      </a>
+
+      <div class="media-body">
+        <!-- Clickable Title -->
+        <h2 class="article-title">
+          <a href="{{ url_for('main.get_music', music_id=music.id) }}">{{ music.title }}</a>
+        </h2>
+        <h5 class="article-content">By: {{ music_creators[loop.index0] }}</h5>
+        {% if music.premium %}
+          <span class="badge bg-warning text-dark">Premium</span>
+        {% else %}
+          <span class="badge bg-success">Free</span>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+{% endblock content %}

@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container text-center mt-4">
+    <h2>{{ music.title }}</h2>
+    <h5>By: {{ music_creator }}</h5> 
+    <p class="text-muted">Released on: {{ music.upload_date.strftime('%Y-%m-%d') }}</p>
+
+    <div class="row mt-4">
+        <!-- Total Views -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Total Views</h4>
+                <h2>{{ music_metrics.view_count }}</h2>
+            </div>
+        </div>
+
+        <!-- Total Likes -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Total Likes</h4>
+                <h2>{{ music_metrics.like_count }}</h2>
+            </div>
+        </div>
+
+        <!-- Total Dislikes -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Total Dislikes</h4>
+                <h2>{{ music_metrics.dislike_count }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Average Views Per Day -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Avg Views/Day</h4>
+                <h2>{{ avg_views_per_day }}</h2>
+            </div>
+        </div>
+
+        <!-- Average Likes Per Day -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Avg Likes/Day</h4>
+                <h2>{{ avg_likes_per_day }}</h2>
+            </div>
+        </div>
+
+        <!-- Average Dislikes Per Day -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow">
+                <h4>Avg Dislikes/Day</h4>
+                <h2>{{ avg_dislikes_per_day }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <h2 class ="mt-5 pt-4">Private Comments</h2>
+    {% if comments %}
+        <ul class="list-group mt-3">
+            {% for comment in comments %}
+                <li class="orange list-group-item">
+                    <strong>{{ commentors[loop.index0] }}:</strong> {{ comment.content }} <br>
+                    <small class="">{{ comment.date.strftime('%Y-%m-%d %H:%M') }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No comments yet.</p>
+    {% endif %}
+	
+</div>
+
+{% endblock %}

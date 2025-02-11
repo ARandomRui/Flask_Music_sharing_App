@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="navbar-expand-lg navbar-nav tag-grid">
+  <a class="nav-item nav-link border spaceme tag-item click-yellow rounded" href="{{ url_for('main.music_library') }}"> All </a>
+  {% for genre in genres %} 
+    <a class="nav-item border rounded spaceme click-yellow tag-item" href="{{ url_for('main.filteredsearch', genre=genre) }}"> {{ genre }} </a>
+  {% endfor %}
+</div>
+
+<div class="ezcontainer">
+  {% for music in music_list.items %}
+    <article class="music-box content-section media">
+      <!-- Clickable Cover Image -->
+      <a href="{{ url_for('main.get_music', music_id=music.id) }}">
+        <img class="article-img" src="{{ url_for('static', filename='cover_pics/' + music.cover_image_file|string) }}">
+      </a>
+
+      <div class="media-body">
+        <!-- Clickable Title -->
+        <h2 class="article-title">
+          <a href="{{ url_for('main.get_music', music_id=music.id) }}">{{ music.title }}</a>
+        </h2>
+        <h5 class="article-content">By: {{ music_creators[loop.index0] }}</h5>
+        {% if music.premium %}
+          <span class="badge bg-warning text-dark">Premium</span>
+        {% else %}
+          <span class="badge bg-success">Free</span>
+        {% endif %}
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+{% endblock content %}

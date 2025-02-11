@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form method="POST" action="" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    
+    <fieldset class="form-group">
+        <legend class="border-bottom mb-4">Music Info</legend>
+
+        <!-- Song Title -->
+        <div class="form-group">
+            {{ form.title.label(class="form-control-label") }}
+            {% if form.title.errors %}
+                {{ form.title(class="form-control form-control-lg is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.title.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.title(class="form-control form-control-lg") }}
+            {% endif %}
+        </div>
+
+        <!-- Genre Selection -->
+        <div class="form-group">
+            <label class="form-control-label">{{ form.genre.label }}</label>
+            <div class="genre-columns">
+                {% for subfield in form.genre %}
+                    <div class="genre-column">
+                        <input type="radio" name="{{ form.genre.name }}" value="{{ subfield.data }}" id="{{ subfield.id }}" class="form-check-input">
+                        <label for="{{ subfield.id }}" class="form-check-label">{{ subfield.label.text }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if form.genre.errors %}
+                {% for error in form.genre.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Shareable Checkbox -->
+        <div class="form-group form-check">
+            {{ form.shareable(class="form-check-input") }}
+            {{ form.shareable.label(class="form-check-label") }}
+        </div>
+
+        <!-- Premium Checkbox -->
+        <div class="form-group form-check">
+            {{ form.premium(class="form-check-input") }}
+            {{ form.premium.label(class="form-check-label") }}
+        </div>
+
+        <!-- Album Cover Upload (Optional) -->
+        <div class="form-group">
+            {{ form.cover_picture.label(class="form-control-label") }}
+            {{ form.cover_picture(class="form-control-file") }}
+            {% if form.cover_picture.errors %}
+                {% for error in form.cover_picture.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Music File Upload (Required) -->
+        <div class="form-group">
+            {{ form.music_file.label(class="form-control-label") }}
+            {{ form.music_file(class="form-control-file") }}
+            {% if form.music_file.errors %}
+                {% for error in form.music_file.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+    </fieldset>
+
+    <!-- Submit Button -->
+    <div class="form-group">
+        {{ form.submit(class="btn btn-outline-info") }}
+    </div>
+</form>
+{% endblock content %}
