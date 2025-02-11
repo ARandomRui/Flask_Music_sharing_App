@@ -98,11 +98,27 @@ def account():
             current_user.image_file = picture_file
         current_user.username = form.username.data
         current_user.bank_details = form.bank_details.data
+        
+        if current_user.role == 'creator':
+            membership = Membership.query.filter_by(creator_id=current_user.id).first()
+            if membership:
+                membership.price = form.membership_price.data
+            else:
+                new_membership = Membership(price=form.membership_price.data, creator_id=current_user.id)
+                db.session.add(new_membership)
+
         db.session.commit()
         flash('Your account has been updated!', 'success')
         return redirect(url_for('main.account'))
+        
     elif request.method == 'GET':
         form.username.data = current_user.username
+        if current_user.role == 'creator':
+            form.bank_details.data = current_user.bank_details
+            membership = Membership.query.filter_by(creator_id=current_user.id).first()
+            if membership:
+                form.membership_price.data = membership.price
+                
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account', image_file=image_file, form=form)
 
@@ -153,7 +169,11 @@ def new_music():
 def music_library():
     genres = [genre.name for genre in Genre.query.all()]
     music_page = request.args.get('page', 1, type=int)
-    music_list = Music.query.order_by(Music.upload_date.desc()).paginate(page=music_page, per_page=9)
+    # Filter only non-premium (free) music
+    if not current_user.is_authenticated:
+        music_list = Music.query.filter_by(premium=0).order_by(Music.upload_date.desc()).paginate(page=music_page, per_page=9)
+    else:
+        music_list = Music.query.order_by(Music.upload_date.desc()).paginate(page=music_page, per_page=9)
     music_creators = [User.query.get(music.creator_id).username for music in music_list.items]
     return render_template('music_library.html', music_list=music_list, genres=genres, music_creators = music_creators)
 
@@ -167,7 +187,10 @@ def filteredsearch(genre):
         return redirect(url_for('main.music_library'))
     
     music_page = request.args.get('page', 1, type=int)
-    music_list = Music.query.filter_by(genre_id=genre_obj.id).paginate(page=music_page, per_page=9)
+    if not current_user.is_authenticated:
+        music_list = Music.query.filter_by(genre_id=genre_obj.id, premium=False).paginate(page=music_page, per_page=9)
+    else:
+        music_list = Music.query.filter_by(genre_id=genre_obj.id).paginate(page=music_page, per_page=9)
     music_creators = [User.query.get(music.creator_id).username for music in music_list.items]
     return render_template('music_library.html', music_list=music_list, genres=genres, music_creators = music_creators)
 
@@ -178,6 +201,32 @@ def get_music(music_id):
     metrics = MusicMetrics.query.filter_by(music_id=music_id).first()
     music_creator = User.query.get(music.creator_id).username
 
+    # Check if the music is premium
+    if music.premium:
+        print(f"💰 This is a premium song!")
+        print(music.creator_id)
+        membership = Membership.query.filter_by(creator_id = music.creator_id).first()
+        
+        if not membership:
+            flash("This music requires a premium membership, but no membership plan exists.", "danger")
+            return redirect(url_for("main.music_library"))  # Redirect back to library if no membership exists
+        # Check if user already purchased membership
+        purchased = PurchasedMembership.query.filter_by(user_id=current_user.id, membership_id=membership.id).first()
+
+        print(f"👤 User Purchase Status: {'✅ Purchased' if purchased else '❌ Not Purchased'}")
+
+        if not purchased:
+            membership = Membership.query.filter_by(creator_id=music.creator_id).first()
+
+            if not membership:
+                print("❌ No Membership Found!")
+                flash("This music requires a premium membership, but no membership plan exists.", "danger")
+                return redirect(url_for("main.music_library"))  # Redirect back to library
+            
+            print(f"✅ Redirecting to premium prompt with price: RM{membership.price}")
+            return redirect(url_for("main.premium_prompt", music_id=music_id))  # Redirect to premium prompt
+
+
     # Increment view count
     music_metrics = MusicMetrics.query.filter_by(music_id=music_id).first()
     if music_metrics:
@@ -186,6 +235,36 @@ def get_music(music_id):
 
     return render_template('music.html', title=music.title, music=music, music_creator = music_creator, metrics = metrics)
 
+@bp.route("/premium_prompt/<int:music_id>")
+@login_required
+def premium_prompt(music_id):
+    music = Music.query.get_or_404(music_id)
+    membership = Membership.query.filter_by(creator_id=music.creator_id).first()
+
+    if not membership:
+        flash("This music requires a premium membership, but no membership plan exists.", "danger")
+        return redirect(url_for("main.music_library"))  # Redirect back to library if no membership exists
+
+    return render_template("premium_prompt.html", music=music, membership=membership)
+
+@bp.route("/purchase_membership/<int:music_id>", methods=["POST"])
+@login_required
+def purchase_membership(music_id):
+    music = Music.query.get_or_404(music_id)
+    membership = Membership.query.filter_by(creator_id=music.creator_id).first()
+
+    if not membership:
+        flash("No membership plan exists for this creator.", "danger")
+        return redirect(url_for("main.music_library"))
+
+    # Add user to PurchasedMembership (so next time they can access directly)
+    new_purchase = PurchasedMembership(user_id=current_user.id, membership_id=music.creator_id)
+    db.session.add(new_purchase)
+    db.session.commit()
+
+    flash(f"You have successfully purchased the membership for RM{membership.price}!", "success")
+    return redirect(url_for("main.get_music", music_id=music_id))
+    
 @bp.route("/music/<int:music_id>/like", methods=["POST"])
 @login_required
 def like_music(music_id):
