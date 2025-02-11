@@ -96,10 +96,11 @@ def account():
         if form.picture.data:
             picture_file = save_picture(form.picture.data)
             current_user.image_file = picture_file
+            
         current_user.username = form.username.data
-        current_user.bank_details = form.bank_details.data
         
         if current_user.role == 'creator':
+            current_user.bank_details = form.bank_details.data
             membership = Membership.query.filter_by(creator_id=current_user.id).first()
             if membership:
                 membership.price = form.membership_price.data
@@ -118,6 +119,9 @@ def account():
             membership = Membership.query.filter_by(creator_id=current_user.id).first()
             if membership:
                 form.membership_price.data = membership.price
+                
+    else:
+        print(form.errors)  # Print form errors to debug
                 
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account', image_file=image_file, form=form)

@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from flask_login import current_user
 from wtforms import StringField, PasswordField, DecimalField, SubmitField, RadioField, BooleanField, TextAreaField, FloatField, SelectField, widgets, SelectMultipleField, IntegerField, FileField
-from wtforms.validators import DataRequired, Length, Email, NumberRange, EqualTo, ValidationError, InputRequired
+from wtforms.validators import DataRequired, Optional, Length, Email, NumberRange, EqualTo, ValidationError, InputRequired
 from musicapp.models import User, Playlist, Music, Comment, Membership, PurchasedMembership, Genre, PlaylistMusic, MusicMetrics
 from flask import current_app
 
@@ -34,9 +34,9 @@ class UpdateAccountForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
     picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
     
-    # Only for creators
-    bank_details = StringField('Bank Details', validators=[Length(min=10, max=50)])
-    membership_price = DecimalField('Membership Price (RM)', validators=[NumberRange(min=1, max=9999)], places=2)
+    # Only for creators (make fields optional)
+    bank_details = StringField('Bank Details', validators=[Optional(), Length(min=10, max=50)])
+    membership_price = DecimalField('Membership Price (RM)', validators=[Optional(), NumberRange(min=1, max=9999)], places=2)
     submit = SubmitField('Update')
 
     def validate_username(self, username):
