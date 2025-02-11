@@ -206,29 +206,30 @@ def get_music(music_id):
     music_creator = User.query.get(music.creator_id).username
 
     # Check if the music is premium
-    if music.premium:
-        print(f"💰 This is a premium song!")
-        print(music.creator_id)
-        membership = Membership.query.filter_by(creator_id = music.creator_id).first()
-        
-        if not membership:
-            flash("This music requires a premium membership, but no membership plan exists.", "danger")
-            return redirect(url_for("main.music_library"))  # Redirect back to library if no membership exists
-        # Check if user already purchased membership
-        purchased = PurchasedMembership.query.filter_by(user_id=current_user.id, membership_id=membership.id).first()
-
-        print(f"👤 User Purchase Status: {'✅ Purchased' if purchased else '❌ Not Purchased'}")
-
-        if not purchased:
-            membership = Membership.query.filter_by(creator_id=music.creator_id).first()
-
-            if not membership:
-                print("❌ No Membership Found!")
-                flash("This music requires a premium membership, but no membership plan exists.", "danger")
-                return redirect(url_for("main.music_library"))  # Redirect back to library
+    if music.creator_id != current_user.id:
+        if music.premium:
+            print(f"💰 This is a premium song!")
+            print(music.creator_id)
+            membership = Membership.query.filter_by(creator_id = music.creator_id).first()
             
-            print(f"✅ Redirecting to premium prompt with price: RM{membership.price}")
-            return redirect(url_for("main.premium_prompt", music_id=music_id))  # Redirect to premium prompt
+            if not membership:
+                flash("This music requires a premium membership, but no membership plan exists.", "danger")
+                return redirect(url_for("main.music_library"))  # Redirect back to library if no membership exists
+            # Check if user already purchased membership
+            purchased = PurchasedMembership.query.filter_by(user_id=current_user.id, membership_id=membership.id).first()
+
+            print(f"👤 User Purchase Status: {'✅ Purchased' if purchased else '❌ Not Purchased'}")
+
+            if not purchased:
+                membership = Membership.query.filter_by(creator_id=music.creator_id).first()
+
+                if not membership:
+                    print("❌ No Membership Found!")
+                    flash("This music requires a premium membership, but no membership plan exists.", "danger")
+                    return redirect(url_for("main.music_library"))  # Redirect back to library
+                
+                print(f"✅ Redirecting to premium prompt with price: RM{membership.price}")
+                return redirect(url_for("main.premium_prompt", music_id=music_id))  # Redirect to premium prompt
 
 
     # Increment view count
@@ -408,11 +409,28 @@ def delete_music(music_id):
     if music.creator_id != current_user.id:
         abort(403)  # Forbidden access
     
-    db.session.delete(music)
-    db.session.delete(metrics)
-    db.session.commit()
-    flash('Music has been deleted!', 'success')
-    
-    return redirect(url_for('main.music_library'))
+    # Delete related files
+    music_file_path = os.path.join(current_app.root_path, f"static/music/{music.id}.mp3")
+    cover_file_path = os.path.join(current_app.root_path, f"static/cover_pics/{music.cover_image_file}")
 
+    if os.path.exists(music_file_path):
+        os.remove(music_file_path)
+    else: 
+        print("doesn't exist music path")
+
+    if os.path.exists(cover_file_path) and music.cover_image_file != "default_cover.jpg":
+        os.remove(cover_file_path)
+    else: 
+        print("doesn't exist cover")
+
+    # Delete related data from other tables
+    MusicMetrics.query.filter_by(music_id=music.id).delete()
+    PlaylistMusic.query.filter_by(music_id=music.id).delete()
+    Comment.query.filter_by(music_id=music.id).delete()
+
+    db.session.delete(music)
+    db.session.commit()
+
+    flash('Music has been deleted!', 'success')
+    return redirect(url_for('main.music_library'))
 
