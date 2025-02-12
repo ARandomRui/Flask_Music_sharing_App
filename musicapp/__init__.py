@@ -35,6 +35,8 @@ def create_app():
 
     # Import and register routes
     from musicapp import routes
-    app.register_blueprint(routes.bp)  # Assuming routes are defined in a Blueprint
+    app.register_blueprint(routes.bp)  # routes are defined in a Blueprint
 
     return app
+    
+    
